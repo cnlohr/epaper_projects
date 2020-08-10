@@ -14,6 +14,7 @@
 #include "esp82xxutil.h"
 #include "commonservices.h"
 #include "vars.h"
+#include "squeepaper.h"
 #include <mdns.h>
 
 /*==============================================================================
@@ -116,6 +117,56 @@ static void ICACHE_FLASH_ATTR procTask(os_event_t *events)
 static void ICACHE_FLASH_ATTR timer100ms(void *arg)
 {
 	CSTick( 1 ); // Send a one to uart
+	printf( "Tick\r\n" );
+	int opsct = 0;
+	int r = 5;
+
+	do
+	{
+		r = SQUEEPAPER_Poll(100);
+		opsct++;
+		if( opsct == 2000 ) break;
+	} while( r > 1 );
+
+	static int state;
+	if( r == 0 )
+	{
+		if( state == 0 )
+		{
+			printf( "SD0X\r\n" );
+			SQUEEPAPER_BeginData();
+			state++;			
+		}
+		else if( state < 76 )
+		{
+			printf( "SD0\r\n" );
+			int i;
+			for( i = 0; i < 200; i++ )
+				SQUEEPAPER_SendData( i );
+			state++;
+		}
+		else if( state == 76 )
+		{
+			printf( "SD1\r\n" );
+			SQUEEPAPER_FinishData();
+			SQUEEPAPER_BeginData2();
+			state++;			
+		}
+		else if( state < 152 )
+		{
+			printf( "SD2\r\n" );
+			int i;
+			for( i = 0; i < 200; i++ )
+				SQUEEPAPER_SendData( 0xaa );
+			state++;
+		}
+		else if( state == 152 )
+		{
+			printf( "SD3\r\n" );
+			SQUEEPAPER_FinishData();	
+			state++;
+		}
+	}
 }
 
 /**
@@ -209,8 +260,6 @@ void ICACHE_FLASH_ATTR user_init(void)
 	os_timer_setfn(&some_timer, (os_timer_func_t *)timer100ms, NULL);
 	os_timer_arm(&some_timer, 100, 1);
 
-	os_printf( "Boot Ok.\n" );
-
 	// Set the wifi sleep type
 	wifi_set_sleep_type(LIGHT_SLEEP_T);
 	wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
@@ -218,6 +267,13 @@ void ICACHE_FLASH_ATTR user_init(void)
 	// Add a process and start it
 	system_os_task(procTask, procTaskPrio, procTaskQueue, procTaskQueueLen);
 	system_os_post(procTaskPrio, 0, 0 );
+
+	os_printf( "Boot Ok.\n" );
+	os_printf( "Setting EPaper.\n" );
+	SQUEEPAPER_Setup();
+	//SQUEEPAPER_TestPattern();
+	os_printf( "Squeepaper Ok.\n" );
+
 }
 
 /**

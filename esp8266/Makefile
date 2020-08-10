@@ -11,6 +11,10 @@ $(info Modules were not checked out... use git clone --recursive in the future. 
 $(shell git submodule update --init --recursive)
 endif
 
+
+SRCS += user/squeepaper.c
+
+
 # Example for a custom rule.
 # Most of the build is handled in main.mf
 .PHONY : showvars
