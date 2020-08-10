@@ -57,7 +57,7 @@ int ICACHE_FLASH_ATTR SQUEEPAPER_Poll( int milliseconds )
 	case SC_BUSYHI: //Busy_high
 	case SC_BUSYLO: //Busy_low
 		//If the busy matches, we're good
-		if( !!(SQUEEPAPER_BUSY) == s ) { popoff = 3; break; }
+		if( !(SQUEEPAPER_BUSY) == s ) { popoff = 3; break; }
 	case SC_WAIT:
 		//Otherwise timeout.
 		squee_elapsed_on_command += milliseconds; 
@@ -132,7 +132,7 @@ static void SQUEEPAPER_BusyLow( uint16_t timeout )// If BUSYN=1 then waiting
 
 static void SQUEEPAPER_Wait( int timeout )
 {
-	while( squee_free() < 3 ) { printf( "SQUEEFREE: %d\n", squee_free() ); SQUEEPAPER_Poll(1); SQUEEPAPER_DELAY_MS(1); }
+	while( squee_free() < 3 ) { SQUEEPAPER_Poll(1); SQUEEPAPER_DELAY_MS(1); }
 	squee_tack( SC_WAIT );
 	squee_tack( timeout & 0xff );
 	squee_tack( timeout >> 8 );
@@ -280,7 +280,7 @@ void SQUEEPAPER_FinishData()
 #elif( defined ( SKU14144 ) || defined( SKU13379 ) )
     SQUEEPAPER_SendCommand(0x12); // DISPLAY_REFRESH
     SQUEEPAPER_Wait(100);
-    SQUEEPAPER_BusyHigh(35000);
+    SQUEEPAPER_BusyHigh(20000);
 #endif
 
 }
@@ -289,13 +289,7 @@ void SQUEEPAPER_TestPattern()
 {
 	int x, y;
 #ifdef SKU13379
-	SQUEEPAPER_BeginData();
-	for( y = 0; y < SQUEEPAPER_HEIGHT; y++ )
-	for( x = 0; x < SQUEEPAPER_WIDTHD/8; x++ )
-	{
-		SQUEEPAPER_SendData( (x>SQUEEPAPER_WIDTHD/16)?0xff:0x00 );
-	}
-	SQUEEPAPER_FinishData();
+
 	SQUEEPAPER_BeginData2();
 	for( y = 0; y < SQUEEPAPER_HEIGHT; y++ )
 	for( x = 0; x < SQUEEPAPER_WIDTHD/8; x++ )
@@ -303,6 +297,15 @@ void SQUEEPAPER_TestPattern()
 		SQUEEPAPER_SendData( (y>SQUEEPAPER_HEIGHT/2)?0xff:0x00 );
 	}
 	SQUEEPAPER_FinishData();
+
+	SQUEEPAPER_BeginData();
+	for( y = 0; y < SQUEEPAPER_HEIGHT; y++ )
+	for( x = 0; x < SQUEEPAPER_WIDTHD/8; x++ )
+	{
+		SQUEEPAPER_SendData( (x>SQUEEPAPER_WIDTHD/16)?0xff:0x00 );
+	}
+	SQUEEPAPER_FinishData();
+
 
 #else
 	SQUEEPAPER_BeginData();
@@ -323,13 +326,7 @@ void SQUEEPAPER_Clear(uint8_t color)
 	int i;
 	int j;
 #ifdef SKU13379
-	SQUEEPAPER_BeginData();
-	uint8_t cs = (color & 1)?0xff:0x00;
-    for(i=0; i<SQUEEPAPER_WIDTHD/8; i++) {
-        for(j=0; j<height; j++)
-            SQUEEPAPER_SendData(cs );
-    }
-	SQUEEPAPER_FinishData();
+	uint8_t cs;
 
 	SQUEEPAPER_BeginData2();
 	cs = (color / 2)?0x00:0xff;
@@ -338,6 +335,15 @@ void SQUEEPAPER_Clear(uint8_t color)
             SQUEEPAPER_SendData(cs );
     }
 	SQUEEPAPER_FinishData();
+
+	SQUEEPAPER_BeginData();
+	cs = (color & 1)?0xff:0x00;
+    for(i=0; i<SQUEEPAPER_WIDTHD/8; i++) {
+        for(j=0; j<height; j++)
+            SQUEEPAPER_SendData(cs );
+    }
+	SQUEEPAPER_FinishData();
+
 #else
 	SQUEEPAPER_BeginData();
     for(i=0; i<width/2; i++) {

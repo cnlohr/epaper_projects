@@ -123,8 +123,9 @@ static void ICACHE_FLASH_ATTR timer100ms(void *arg)
 
 	do
 	{
-		r = SQUEEPAPER_Poll(100);
+		r = SQUEEPAPER_Poll(1);
 		opsct++;
+		if( r == 1 ) return;
 		if( opsct == 2000 ) break;
 	} while( r > 1 );
 
@@ -133,36 +134,31 @@ static void ICACHE_FLASH_ATTR timer100ms(void *arg)
 	{
 		if( state == 0 )
 		{
-			printf( "SD0X\r\n" );
 			SQUEEPAPER_BeginData();
 			state++;			
 		}
 		else if( state < 76 )
 		{
-			printf( "SD0\r\n" );
 			int i;
 			for( i = 0; i < 200; i++ )
-				SQUEEPAPER_SendData( i );
+				SQUEEPAPER_SendData( (state < 36)?0xff:0x00 );
 			state++;
 		}
 		else if( state == 76 )
 		{
-			printf( "SD1\r\n" );
 			SQUEEPAPER_FinishData();
 			SQUEEPAPER_BeginData2();
 			state++;			
 		}
 		else if( state < 152 )
 		{
-			printf( "SD2\r\n" );
 			int i;
 			for( i = 0; i < 200; i++ )
-				SQUEEPAPER_SendData( 0xaa );
+				SQUEEPAPER_SendData( ((i/25)%2)?0xff:0x00 );
 			state++;
 		}
 		else if( state == 152 )
 		{
-			printf( "SD3\r\n" );
 			SQUEEPAPER_FinishData();	
 			state++;
 		}
@@ -258,7 +254,7 @@ void ICACHE_FLASH_ATTR user_init(void)
 	// Set timer100ms to be called every 100ms
 	os_timer_disarm(&some_timer);
 	os_timer_setfn(&some_timer, (os_timer_func_t *)timer100ms, NULL);
-	os_timer_arm(&some_timer, 100, 1);
+	os_timer_arm(&some_timer, 1, 1);
 
 	// Set the wifi sleep type
 	wifi_set_sleep_type(LIGHT_SLEEP_T);

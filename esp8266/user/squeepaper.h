@@ -170,7 +170,7 @@
 #define SQUEEPAPER_CLK0      { PIN_OUT_CLEAR = 1<<SQUEEPAPER_SCLK; }
 #define SQUEEPAPER_DIN1      { PIN_OUT_SET   = 1<<SQUEEPAPER_DIN;  }
 #define SQUEEPAPER_DIN0      { PIN_OUT_CLEAR = 1<<SQUEEPAPER_DIN;  }
-#define SQUEEPAPER_DELAY    { int i; for( i = 0; i < 5; i++ ) { asm volatile( "nop" ); } }
+#define SQUEEPAPER_DELAY    { int i; for( i = 0; i < 15; i++ ) { asm volatile( "nop" ); } }
 #define SQUEEPAPER_DELAY_MS(x) { ets_delay_us( ((x) * 1000) ); }
 
 #define SQUEEPAPER_GPIO_SETUP { \
