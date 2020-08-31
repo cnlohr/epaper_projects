@@ -169,7 +169,7 @@ int main()
 		sleep_enable();
 		sleep_mode();
 		sleep_disable();
-		if( seconds_over_8 > 10 )
+		if( seconds_over_8 >= ((24*((60*60)/8))) )
 		{
 			seconds_over_8 = 0;
 			pictureno++;
