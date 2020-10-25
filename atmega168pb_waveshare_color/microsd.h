@@ -1,3 +1,7 @@
+//
+// DO NOT USE THIS IF YOU CAN USE FULLSD.C  PLEASE SEE FULLSD.C AS THAT USES THE SCSI PROTOCOL, NOT THE SPI PROTOCOL.
+// MANY SD CARDS WILL NOT SUPPORT THIS INTERFACE METHOD.
+//
 //Copyright 2012 <>< Charles Lohr, All Rights Reserved, May be licensed under MIT/x11 or newBSD licenses, you choose.
 
 #ifndef _MICROSD_H
