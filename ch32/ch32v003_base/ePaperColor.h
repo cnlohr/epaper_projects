@@ -58,6 +58,13 @@ static void EPD_7IN3F_BusyLow( uint32_t timeout )// If BUSYN=1 then waiting
 
 static void SpiTransfer( uint8_t data )
 {
+	GPIOOff( WVS_CS );  Delay();
+	while( SPI1->STATR & 0x80 );
+	SPI1->DATAR = data;
+	while( SPI1->STATR & 0x80 );
+
+	GPIOOn( WVS_CS );
+	return;
 	int bit;
 	GPIOOff( WVS_CS );  Delay();
 	GPIOOff( WVS_CLK ); Delay();
@@ -194,6 +201,141 @@ static void Clear(uint8_t color)
 	FlushAndDisplayEPaper();
 }
 
+void SetupEPaperDisplayTrunc()
+{
+
+	//Reset for 1ms
+	Delay_Ms( 1 );
+
+	GPIOOn( WVS_RESET );
+
+	Delay_Ms( 1 );
+
+    EPD_7IN3F_BusyHigh( 20 );
+#if 0
+	// At end
+    Delay_Us(50000);
+    SendCommand(0x50);
+    SendData(0x37);
+    Delay_Us(50000);
+
+
+	EPD_7IN3F_Reset();
+	EPD_7IN3F_ReadBusyH();
+	DEV_Delay_ms(30);
+#endif
+
+	SendCommand(0xAA);    // CMDH
+	SendData(0x49);
+	SendData(0x55);
+	SendData(0x20);
+	SendData(0x08);
+	SendData(0x09);
+	SendData(0x18);
+
+	SendCommand(0x01);  // "PWR"
+	SendData(0x3F);
+	SendData(0x00);
+	SendData(0x32);
+	SendData(0x2A);
+	SendData(0x0E);
+	SendData(0x2A);
+
+	// toying with this can make things more faded.
+	// Originally 0x00, 0x5f, 0x69
+	SendCommand(0x00); // "PSR"
+	SendData(0x5f);
+	SendData(0x69);
+
+	{
+		// Can't tell what this does.
+		SendCommand(0x03); // "POFS"
+		SendData(0x00);
+		SendData(0x54);
+		SendData(0x00);
+		SendData(0x44); 
+
+		// Can't tell what this does. (No visual difference)
+		SendCommand(0x05); // "BTST1"
+		SendData(0x40);
+		SendData(0x1F);
+		SendData(0x1F);
+		SendData(0x2C);
+
+		SendCommand(0x06); // "BTST2"
+		SendData(0x6F);
+		SendData(0x1F);
+		SendData(0x1F);
+		SendData(0x22);
+
+		// Can't tell what this does. (No visual difference)
+		SendCommand(0x08); // "BTST3"
+		SendData(0x6F);
+		SendData(0x1F);
+		SendData(0x1F);
+		SendData(0x22);
+	}
+
+	// based on testing, registers 2-18 do basically nothing.
+
+
+	// 0x20 seems to have something to do with the intensity of what the sets should be?
+	// 0x20 looks VERY PROMISING
+	// 0x66, 0x74 doesn't seem to do anything
+
+	// ???
+	SendCommand(0x13);    // IPC
+	SendData(0x00);
+	SendData(0x04);
+
+	// ???
+	SendCommand(0x30);
+	SendData(0x3C);
+
+	// No changes?
+	SendCommand(0x41);     // TSE
+	SendData(0x00);
+
+	// No change?
+	SendCommand(0x50);
+	SendData(0x3F);
+
+	SendCommand(0x60); // "TCON"
+	SendData(0x02);
+	SendData(0x00);
+
+	// This controls the "active area"
+	SendCommand(0x61); // "TRES"
+	SendData(0x03);
+	SendData(0x20);
+	SendData(0x01); 
+	SendData(0xE0);
+
+	// Some sort of offset.
+	SendCommand(0x82);  // "VDCS"
+	SendData(0x1E); 
+
+	// ??? No effect?
+	SendCommand(0x84); // "T_VDCS"
+	SendData(0x00);
+
+	// Radically changes pattern, but it looks like a memory mapping thing.
+	// Probably not worth investigating.
+	SendCommand(0x86);    // AGID
+	SendData(0x00);
+
+	// ?? No visual change
+	SendCommand(0xE3); // "PWS"
+	SendData(0x2F);
+
+	// lsb of data = 1 seems to disable screen updates.
+	SendCommand(0xE0);   // CCSET
+	SendData(0x00); 
+
+	// No change?
+	SendCommand(0xE6);   // TSSET
+	SendData(0x00);
+}
 
 void SetupEPaperDisplay()
 {
@@ -203,12 +345,28 @@ void SetupEPaperDisplay()
 	GPIOOff( WVS_DIN );
 	GPIOOff( WVS_RESET );
 
-	funPinMode( WVS_DIN,  GPIO_CFGLR_OUT_30Mhz_PP );
-	funPinMode( WVS_CLK,  GPIO_CFGLR_OUT_30Mhz_PP );
+	funPinMode( WVS_DIN,  GPIO_CFGLR_OUT_50Mhz_AF_PP );
+	funPinMode( WVS_CLK,  GPIO_CFGLR_OUT_50Mhz_AF_PP );
 	funPinMode( WVS_CS,   GPIO_CFGLR_OUT_30Mhz_PP );
 	funPinMode( WVS_DC,   GPIO_CFGLR_OUT_30Mhz_PP );
 	funPinMode( WVS_RESET,GPIO_CFGLR_OUT_30Mhz_PP );
 	funPinMode( WVS_BUSY, GPIO_CFGLR_IN_PUPD );
+
+
+	// Enable SPI + Peripherals
+	RCC->APB2PCENR |= RCC_APB2Periph_SPI1;
+
+	// Configure SPI 
+	SPI1->CTLR1 = 
+		SPI_NSS_Soft | SPI_CPHA_1Edge | SPI_CPOL_Low | SPI_DataSize_8b |
+		SPI_Mode_Master | SPI_Direction_1Line_Tx |
+		SPI_BaudRatePrescaler_2;
+
+	// enable SPI port
+	SPI1->CTLR1 |= CTLR1_SPE_Set;
+
+	// high speed
+	SPI1->HSCR = 1;
 
 	//Reset for 1ms
 	Delay_Ms( 1 );
@@ -310,8 +468,7 @@ void SetupEPaperDisplay()
 	SendData(0x02);
 	SendData(0x00);
 
-	// This has significant changes, investigate later.
-	// I think it defines the pinout mapping.
+	// This controls the "active area"
 	SendCommand(0x61); // "TRES"
 	SendData(0x03);
 	SendData(0x20);

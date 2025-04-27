@@ -40,9 +40,9 @@
     //              ^
 	//
 
-static const char * palette[10] = {
-	"1111111111111111", // Black
-	"2222222222222222", // White
+static const char * palette[16] = {
+	"5552555555555555", // Black
+	"2221222222222222", // White
 	"1212121212122222", // Yellow
 	"1112121212121212", // Green
 	"1211111112111111", // Red
@@ -51,12 +51,19 @@ static const char * palette[10] = {
 	"2211112122111121", // Light Purple
 	"1212211212122112", // Orange
 	"1221121212211212", // Brown
+	"2222222222222221", // Cyan
+	"0000000000000000", // Nul
+	"0000000000000000", // Nul
+	"0000000000000000", // Nul
+	"0000000000000000", // Nul
+	"0000000000000000", // Nul
+	"0000000000000000", // Nul
 };
-static const char pstopat[10] = {
-	0, 0, 1, 1, 1, 1, 1, 1, 1, 0
+static const char pstopat[16] = {
+	0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0
 };
 
-static int palettepaused[10] = { 0 };
+static int palettepaused[16] = { 0 };
 
 
 int main()
@@ -172,7 +179,7 @@ if( i > 240)
 #else
 
 		for(i=0; i<480; i++) {
-		    for(k = 0 ; k < 400/80; k ++) {
+		    for(k = 0 ; k < sizeof(palettepaused)/sizeof(palettepaused[0])/2; k ++) {
 				int acol = (i>240)?1:0;
 				int arow = k;//(k/80);
 				int pcol = arow + (acol?5:0);
@@ -183,7 +190,7 @@ if( i > 240)
 				while( SPI1->STATR & 0x80 ) { }
 				// I do not know why this needs to be here and in the inner transfer
 				int sp = 0;
-				for( sp = 0; sp < 80; sp++ )
+				for( sp = 0; sp < (400/(sizeof(palettepaused)/sizeof(palettepaused[0])/2)); sp++ )
 				{
 					MiniTransfer( cp | (cp<<4) );
 				}
