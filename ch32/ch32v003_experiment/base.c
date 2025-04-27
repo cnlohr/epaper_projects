@@ -51,13 +51,13 @@ static const char * palette[16] = {
 	"2211112122111121", // Light Purple
 	"1212211212122112", // Orange
 	"1221121212211212", // Brown
-	"2222222222222221", // Cyan
-	"0000000000000000", // Nul
-	"0000000000000000", // Nul
-	"0000000000000000", // Nul
-	"0000000000000000", // Nul
-	"0000000000000000", // Nul
-	"0000000000000000", // Nul
+	"2222222222222121", // Cyan
+	"1111111111111111", // Nul
+	"1111111111111111", // Nul
+	"1111111111111111", // Nul
+	"1111111111111111", // Nul
+	"1111111111111111", // Nul
+	"1111111111111111", // Nul
 };
 static const char pstopat[16] = {
 	0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0
@@ -89,7 +89,6 @@ int main()
 //while(1);
 	while( 1 )
 	{
-_rand_lfsr = 5;
 		SetupEPaperDisplayTrunc();
 
 #if 1
@@ -179,10 +178,11 @@ if( i > 240)
 #else
 
 		for(i=0; i<480; i++) {
-		    for(k = 0 ; k < sizeof(palettepaused)/sizeof(palettepaused[0])/2; k ++) {
+			int palettecolumns = sizeof(palettepaused)/sizeof(palettepaused[0])/2;
+		    for(k = 0 ; k < palettecolumns; k ++) {
 				int acol = (i>240)?1:0;
 				int arow = k;//(k/80);
-				int pcol = arow + (acol?5:0);
+				int pcol = arow + (acol?palettecolumns:0);
 
 				cp = palette[pcol][frame&0xf];
 				cp &= palettepaused[pcol];
@@ -190,7 +190,7 @@ if( i > 240)
 				while( SPI1->STATR & 0x80 ) { }
 				// I do not know why this needs to be here and in the inner transfer
 				int sp = 0;
-				for( sp = 0; sp < (400/(sizeof(palettepaused)/sizeof(palettepaused[0])/2)); sp++ )
+				for( sp = 0; sp < 400/palettecolumns; sp++ )
 				{
 					MiniTransfer( cp | (cp<<4) );
 				}
@@ -210,7 +210,7 @@ if( i > 240)
 
 
 		int pcheck;
-		for( pcheck = 0; pcheck < 10; pcheck++ )
+		for( pcheck = 0; pcheck < sizeof(palettepaused)/sizeof(palettepaused[0]); pcheck++ )
 		{
 			if( sframe == 0 ) palettepaused[pcheck] = 0xf;
 			if( sframe >= 0x30 && (pstopat[pcheck] == (sframe&0xf)) )
